@@ -6,5 +6,5 @@ Futures:
 2. Change state in ipvs
 3. Config in sql
 4. History state
-5. Telegram alert
+5. Telegram alert notify
 

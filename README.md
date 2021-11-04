@@ -8,3 +8,4 @@ Futures:
 4. State history (last N state)
 5. Ability enable/disable instance
 6. Telegram alert notify (curl, bot)
+

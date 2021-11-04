@@ -53,8 +53,8 @@ func main() {
 
 	// loop for healthchek
 	for _, hc := range checks {
-		//fmt.Println(hc.id, hc.vs, hc.vaddr, hc.raddr, hc.caddr, hc.path, hc.mode, hc.weight, hc.tgid, hc.status, hc.changed)
-		go healthcheck(hc, cf, &wg) // parallel go cealthcheck by gorutine
+		//fmt.Println(hc.id, hc.vs, hc.vaddr, hc.raddr, hc.caddr, hc.path, hc.mode, hc.weight, hc.tgid, hc.status, hc.changed) // print conf for debug
+		go healthcheck(hc, cf, &wg) // parallel go healthcheck by gorutine
 	}
 	wg.Wait() // wait for anding all healthchecks
 }
@@ -62,12 +62,12 @@ func main() {
 // function  for get config
 func loadConfig() config {
 
-	db, err := sql.Open("sqlite3", "ipvshc.db") // open connect to DB
+	db, err := sql.Open("sqlite3", "/opt/ipvshc/ipvshc.db") // open connect to DB
 	if err != nil {
 		panic(err)
 	}
 	defer db.Close()
-	row, err := db.Query("select * from config limit 1;") // select confgi
+	row, err := db.Query("select config.id, config.host, config.thold, config.interval, config.tgtoken from config limit 1;") // select config
 	if err != nil {
 		panic(err)
 	}
@@ -93,12 +93,13 @@ func loadConfig() config {
 //function for get all healthchecks
 func loadChecks() []check {
 
-	db, err := sql.Open("sqlite3", "ipvshc.db") // connect to DB
+	db, err := sql.Open("sqlite3", "/opt/ipvshc/ipvshc.db") // connect to DB
 	if err != nil {
 		panic(err)
 	}
 	defer db.Close()
-	rows, err := db.Query("SELECT healthcheck.*, state.status, MAX(state.changed) FROM healthcheck LEFT JOIN state ON healthcheck.raddr=state.raddr GROUP BY healthcheck.id;") // select HC
+	//rows, err := db.Query("SELECT healthcheck.*, state.status, MAX(state.changed) FROM healthcheck LEFT JOIN state ON healthcheck.raddr=state.raddr GROUP BY healthcheck.id;") // select HC
+	rows, err := db.Query("SELECT healthcheck.id, healthcheck.vs, healthcheck.vaddr, healthcheck.raddr, healthcheck.caddr, healthcheck.path, healthcheck.mode, healthcheck.weight, healthcheck.tgid, state.status, MAX(state.changed) FROM healthcheck LEFT JOIN state ON healthcheck.raddr=state.raddr WHERE healthcheck.state='enable' GROUP BY healthcheck.id ;") // select HC
 	if err != nil {
 		panic(err)
 	}
@@ -167,7 +168,7 @@ func healthcheck(hc check, cf config, wg *sync.WaitGroup) { // add parametr hc, 
 			fmt.Println(string(stdout)) // Print the output
 
 			// write to DB status
-			db, err := sql.Open("sqlite3", "ipvshc.db") // connect to DB
+			db, err := sql.Open("sqlite3", "/opt/ipvshc/ipvshc.db") // connect to DB
 			if err != nil {
 				panic(err)
 			}
@@ -222,7 +223,7 @@ func healthcheck(hc check, cf config, wg *sync.WaitGroup) { // add parametr hc, 
 			fmt.Println(string(stdout)) // Print the output
 
 			// write to DB status
-			db, err := sql.Open("sqlite3", "ipvshc.db") // connect to DB
+			db, err := sql.Open("sqlite3", "/opt/ipvshc/ipvshc.db") // connect to DB
 			if err != nil {
 				panic(err)
 			}

@@ -6,5 +6,5 @@ Futures:
 2. Change state  (ipvsadm)
 3. Config in sql (sqlite)
 4. State history (last N state)
-5. Telegram alert notify (curl, bot)
-
+5. Ability enable/disable instance
+6. Telegram alert notify (curl, bot)

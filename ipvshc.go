@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path"
 	"sync"
 	"time"
 
@@ -19,6 +20,7 @@ type config struct {
 	interval int
 	tgtoken  string
 	hostname string
+	expath   string
 }
 
 // structure for healthcheck
@@ -44,7 +46,7 @@ func main() {
 	//fmt.Println(cf.id, cf.host, cf.thold, cf.interval, cf.tgtoken)
 
 	//function get healthchecks
-	checks := loadChecks()
+	checks := loadChecks(cf)
 
 	// wait for anding all healthchecks
 	var wg sync.WaitGroup
@@ -61,8 +63,24 @@ func main() {
 
 // function  for get config
 func loadConfig() config {
+	var cf config
 
-	db, err := sql.Open("sqlite3", "/opt/ipvshc/ipvshc.db") // open connect to DB
+	hostname, err := os.Hostname() //get hostname from OS
+	if err != nil {
+		panic(err)
+	}
+	//fmt.Println("hostname:", hostname)
+	cf.hostname = hostname
+
+	ex, err := os.Executable() //get exec path
+	if err != nil {
+		panic(err)
+	}
+	exPath := path.Dir(ex)
+	//fmt.Println(exPath)
+	cf.expath = exPath
+
+	db, err := sql.Open("sqlite3", cf.expath+"/ipvshc.db") // open connect to DB
 	if err != nil {
 		panic(err)
 	}
@@ -72,18 +90,12 @@ func loadConfig() config {
 		panic(err)
 	}
 	defer row.Close()
-	var cf config
+	//var cf config
 	row.Next()
 	err = row.Scan(&cf.id, &cf.host, &cf.thold, &cf.interval, &cf.tgtoken) // get
 	if err != nil {
 		fmt.Println(err)
 	}
-	hostname, err := os.Hostname() //get hostname from OS
-	if err != nil {
-		panic(err)
-	}
-	//fmt.Println("hostname:", hostname)
-	cf.hostname = hostname
 
 	//fmt.Println(cf.id, cf.host, cf.thold, cf.interval, cf.tgtoken) // show all
 	fmt.Println("host: "+cf.hostname, "src:", cf.host, "thold:", cf.thold, "interval:", cf.interval, "sec") // show param
@@ -91,9 +103,9 @@ func loadConfig() config {
 }
 
 //function for get all healthchecks
-func loadChecks() []check {
+func loadChecks(cf config) []check {
 
-	db, err := sql.Open("sqlite3", "/opt/ipvshc/ipvshc.db") // connect to DB
+	db, err := sql.Open("sqlite3", cf.expath+"/ipvshc.db") // connect to DB
 	if err != nil {
 		panic(err)
 	}
@@ -168,7 +180,7 @@ func healthcheck(hc check, cf config, wg *sync.WaitGroup) { // add parametr hc, 
 			fmt.Println(string(stdout)) // Print the output
 
 			// write to DB status
-			db, err := sql.Open("sqlite3", "/opt/ipvshc/ipvshc.db") // connect to DB
+			db, err := sql.Open("sqlite3", cf.expath+"/ipvshc.db") // connect to DB
 			if err != nil {
 				panic(err)
 			}
@@ -223,7 +235,7 @@ func healthcheck(hc check, cf config, wg *sync.WaitGroup) { // add parametr hc, 
 			fmt.Println(string(stdout)) // Print the output
 
 			// write to DB status
-			db, err := sql.Open("sqlite3", "/opt/ipvshc/ipvshc.db") // connect to DB
+			db, err := sql.Open("sqlite3", cf.expath+"/ipvshc.db") // connect to DB
 			if err != nil {
 				panic(err)
 			}
